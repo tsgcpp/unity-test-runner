@@ -116,7 +116,7 @@ if [ "$PLAY_MODE" = "true" ]; then
     -logFile "$FULL_ARTIFACTS_PATH/playmode.log" \
     -projectPath "$UNITY_PROJECT_PATH" \
     -runTests \
-    -testPlatform playmode \
+    -testPlatform $PLAYMODETESTPLATFORM \
     -testResults "$FULL_ARTIFACTS_PATH/playmode-results.xml" \
     $CUSTOM_PARAMETERS
 

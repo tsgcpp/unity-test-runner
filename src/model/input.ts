@@ -25,6 +25,7 @@ const Input = {
     const gitPrivateToken = getInput('gitPrivateToken') || '';
     const githubToken = getInput('githubToken') || '';
     const checkName = getInput('checkName') || 'Test Results';
+    const playModeTestPlatform = getInput('playModeTestPlatform') || 'playmode';
 
     // Validate input
     if (!this.testModes.includes(testMode)) {
@@ -63,6 +64,7 @@ const Input = {
       gitPrivateToken,
       githubToken,
       checkName,
+      playModeTestPlatform,
     };
   },
 };

@@ -18,6 +18,7 @@ async function run() {
       gitPrivateToken,
       githubToken,
       checkName,
+      playModeTestPlatform,
     } = Input.getFromUser();
     const baseImage = new ImageTag({ version: unityVersion, customImage });
 
@@ -37,6 +38,7 @@ async function run() {
         sshAgent,
         gitPrivateToken,
         githubToken,
+        playModeTestPlatform,
       });
     } finally {
       // Set output

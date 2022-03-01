@@ -29,6 +29,7 @@ const Docker = {
       sshAgent,
       gitPrivateToken,
       githubToken,
+      playModeTestPlatform,
     } = parameters;
 
     const command = `docker run \
@@ -55,6 +56,7 @@ const Docker = {
         --env GITHUB_WORKSPACE=/github/workspace \
         --env GITHUB_ACTION \
         --env GITHUB_EVENT_PATH \
+        --env PLAYMODETESTPLATFORM="${playModeTestPlatform}" \
         --env RUNNER_OS \
         --env RUNNER_TOOL_CACHE \
         --env RUNNER_TEMP \

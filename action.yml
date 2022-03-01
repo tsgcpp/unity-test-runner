@@ -44,6 +44,10 @@ inputs:
     required: false
     default: 'Test Results'
     description: 'Name for the check run that is created when a github token is provided.'
+  playModeTestPlatform:
+    required: false
+    default: playmode
+    description: 'Platform in PlayMode tests. See https://docs.unity3d.com/ScriptReference/BuildTarget.html'
 outputs:
   artifactsPath:
     description: 'Path where the artifacts are stored'
