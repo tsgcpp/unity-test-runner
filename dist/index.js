@@ -42,7 +42,7 @@ function run() {
         try {
             model_1.Action.checkCompatibility();
             const { dockerfile, workspace, actionFolder } = model_1.Action;
-            const { unityVersion, customImage, projectPath, customParameters, testMode, artifactsPath, useHostNetwork, sshAgent, gitPrivateToken, githubToken, checkName, } = model_1.Input.getFromUser();
+            const { unityVersion, customImage, projectPath, customParameters, testMode, artifactsPath, useHostNetwork, sshAgent, gitPrivateToken, githubToken, checkName, playModeTestPlatform, } = model_1.Input.getFromUser();
             const baseImage = new model_1.ImageTag({ version: unityVersion, customImage });
             try {
                 // Build docker image
@@ -59,6 +59,7 @@ function run() {
                     sshAgent,
                     gitPrivateToken,
                     githubToken,
+                    playModeTestPlatform,
                 });
             }
             finally {
@@ -168,7 +169,7 @@ const Docker = {
     },
     run(image, parameters, silent = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { unityVersion, workspace, projectPath, customParameters, testMode, artifactsPath, useHostNetwork, sshAgent, gitPrivateToken, githubToken, } = parameters;
+            const { unityVersion, workspace, projectPath, customParameters, testMode, artifactsPath, useHostNetwork, sshAgent, gitPrivateToken, githubToken, playModeTestPlatform, } = parameters;
             const command = `docker run \
         --workdir /github/workspace \
         --rm \
@@ -193,6 +194,7 @@ const Docker = {
         --env GITHUB_WORKSPACE=/github/workspace \
         --env GITHUB_ACTION \
         --env GITHUB_EVENT_PATH \
+        --env PLAYMODETESTPLATFORM="${playModeTestPlatform}" \
         --env RUNNER_OS \
         --env RUNNER_TOOL_CACHE \
         --env RUNNER_TEMP \
@@ -389,6 +391,7 @@ const Input = {
         const gitPrivateToken = (0, core_1.getInput)('gitPrivateToken') || '';
         const githubToken = (0, core_1.getInput)('githubToken') || '';
         const checkName = (0, core_1.getInput)('checkName') || 'Test Results';
+        const playModeTestPlatform = (0, core_1.getInput)('playModeTestPlatform') || 'playmode';
         // Validate input
         if (!this.testModes.includes(testMode)) {
             throw new Error(`Invalid testMode ${testMode}`);
@@ -420,6 +423,7 @@ const Input = {
             gitPrivateToken,
             githubToken,
             checkName,
+            playModeTestPlatform,
         };
     },
 };
@@ -12941,9 +12945,17 @@ AbortError.prototype = Object.create(Error.prototype);
 AbortError.prototype.constructor = AbortError;
 AbortError.prototype.name = 'AbortError';
 
+const URL$1 = Url.URL || whatwgUrl.URL;
+
 // fix an issue where "PassThrough", "resolve" aren't a named export for node <10
 const PassThrough$1 = Stream.PassThrough;
-const resolve_url = Url.resolve;
+
+const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) {
+	const orig = new URL$1(original).hostname;
+	const dest = new URL$1(destination).hostname;
+
+	return orig === dest || orig[orig.length - dest.length - 1] === '.' && orig.endsWith(dest);
+};
 
 /**
  * Fetch function
@@ -13031,7 +13043,19 @@ function fetch(url, opts) {
 				const location = headers.get('Location');
 
 				// HTTP fetch step 5.3
-				const locationURL = location === null ? null : resolve_url(request.url, location);
+				let locationURL = null;
+				try {
+					locationURL = location === null ? null : new URL$1(location, request.url).toString();
+				} catch (err) {
+					// error here can only be invalid URL in Location: header
+					// do not throw when options.redirect == manual
+					// let the user extract the errorneous redirect URL
+					if (request.redirect !== 'manual') {
+						reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location}`, 'invalid-redirect'));
+						finalize();
+						return;
+					}
+				}
 
 				// HTTP fetch step 5.5
 				switch (request.redirect) {
@@ -13078,6 +13102,12 @@ function fetch(url, opts) {
 							timeout: request.timeout,
 							size: request.size
 						};
+
+						if (!isDomainOrSubdomain(request.url, locationURL)) {
+							for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
+								requestOpts.headers.delete(name);
+							}
+						}
 
 						// HTTP-redirect fetch step 9
 						if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
